@@ -1,0 +1,9 @@
+.env
+*.cfg
+server-backup.py
+__pycache__/
+bin/
+include/
+lib/
+lib64/
+templates/
