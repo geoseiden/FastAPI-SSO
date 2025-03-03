@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ user.role }} Dashboard</title>
+    <style>
+    .popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border: 1px solid black;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .popup.show {
+        display: block;
+    }
+
+    </style>
+</head>
+<body>
+    <h1>Dashboard</h1>
+    <p>Welcome, {{ user.name }}!</p>
+    <p>ID: {{ user.id }}</p>
+    <p>Email: {{ user.email }}</p>
+    {% if user.role %}
+        <p>Role: {{ user.role }}</p>
+    {% else %}
+        <p>Role: Role not assigned</p>
+    {% endif %}
+    <a href="/logout">LOGOUT</a>
+    <hr>
+
+
+    {% if user.role == "admin" %}
+    <table id="users-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Disabled</th>
+            <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody> </tbody>  </table>
+      <div id="error-message" style="color: red;"></div><hr>
+        <h2>User Role Registration</h2>
+        <form method="post" action="/register_role">
+            <label for="id">User ID:</label>
+            <!-- <input type="text" id="id" name="id" required><br><br>-->
+            <select name="id" id="id" class="id"></select>
+            <label for="role">Role:</label>
+            <!-- <input type="text" id="role" name="role" required><br><br> -->
+            <select name="role" id="role">
+                <option value="admin">Admin</option>
+                <option value="L1">L1 Employee</option>
+            </select><br><br>
+            <button type="submit">Update Role</button>
+        </form>
+    <div class="popup" id="popup">
+        
+        <h1>User Updation</h1>
+        <form action="/update_users" method="post">
+            <label for="id">ID</label>
+            <input type="text" name="id" id="id"><br>
+            <label for="name">Name</label>
+            <input type="text" name="name" id="name"><br>
+            <label for="email">Email</label>
+            <input type="text" name="email" id="email"><br>
+            <label for="role">role</label>
+            <input type="text" name="role" id="role" disabled><br>
+            <button type="button" onclick="document.getElementById('popup').classList.remove('show')">Cancel</button>
+            <button type="submit">Update</button>
+        </form>
+      </div>
+      {% endif %}
+</body>
+<script>
+    async function getUsers() {
+            const response = await fetch('/users');
+            const users = await response.json();
+            const table = document.getElementById('users-table');
+            const tbody = table.querySelector('tbody');
+
+
+            users.forEach(user => {
+            const row = tbody.insertRow();
+
+            const idCell=row.insertCell();
+            idCell.textContent=user.id;
+
+            const nameCell = row.insertCell();
+            nameCell.textContent = user.name;
+
+            const emailCell = row.insertCell();
+            emailCell.textContent = user.email;
+
+            const roleCell = row.insertCell();
+            roleCell.textContent = user.role;
+
+            const disabledCell = row.insertCell();
+            disabledCell.textContent = user.disabled;
+
+            const editButton=row.insertCell();
+            editButton.innerHTML="<button onclick='updateUser(this)'>Edit</button>      <button onclick='deleteUser(this)'>Delete</button>      <button onclick='dsiableUser(this)'>Disable / Enable</button>"
+
+            const newOption = new Option(user.id,user.id)
+            const idSelect=document.getElementById("id")
+            idSelect.add(newOption)
+
+            });
+
+        }
+        async function updateUser(button) {
+            let row = button.parentNode.parentNode; 
+            let idCell = row.cells[0];
+            let nameCell = row.cells[1];
+            let emailCell = row.cells[2];
+            let roleCell = row.cells[3];
+
+            const popup=document.getElementById("popup")
+            popup.querySelector("#id").value = idCell.textContent;
+            popup.querySelector("#name").value = nameCell.textContent;
+            popup.querySelector("#email").value = emailCell.textContent;
+            popup.querySelector("#role").value = roleCell.textContent;
+
+            document.querySelector(".popup").classList.add("show");
+        }
+        async function deleteUser(button) {
+            let row = button.parentNode.parentNode;
+            let idCell = row.cells[0];
+            let userId = idCell.textContent;
+                const response = await fetch("/delete_user", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: `id=${userId}`
+                });
+            if (response.ok) {
+                row.remove();
+                alert("User deleted successfully!"); // Alert in JavaScript
+            } else {
+                const errorData = await response.json(); // Parse JSON error
+                alert(errorData.message || "Error deleting user."); // Display error
+            }
+        }
+        async function dsiableUser(button) {
+            let row = button.parentNode.parentNode;
+            let idCell = row.cells[0];
+            let userId = idCell.textContent;
+                const response = await fetch("/disable_user", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: `id=${userId}`
+                });
+            if (response.ok) {
+                row.remove();
+                alert("User disabled successfully!");
+            } else {
+                const errorData = await response.json();
+                alert(errorData.message || "Error disabling user.");
+            }
+        }
+    window.addEventListener('DOMContentLoaded', getUsers);
+</script>
+</html>
